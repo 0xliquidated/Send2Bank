@@ -18,7 +18,7 @@ function App() {
   const [totalBanked, setTotalBanked] = useState(0); // Total ETH banked by user
   const [bankStreak, setBankStreak] = useState(0); // Days of consecutive banking
 
-  // Load saved stats from localStorage
+  // Load saved stats from localStorage when account changes
   useEffect(() => {
     if (account) {
       const savedTotal = localStorage.getItem(`totalBanked_${account}`) || 0;
@@ -79,21 +79,23 @@ function App() {
       await tx.wait();
       setStatus('Success! 0.0001 ETH sent to the bank.');
 
-      // Update stats (client-side for now)
+      // Update total banked
       const newTotal = totalBanked + 0.0001;
       setTotalBanked(newTotal);
       localStorage.setItem(`totalBanked_${account}`, newTotal);
 
-      const lastBanked = localStorage.getItem(`lastBanked_${account}`);
-      const today = new Date().toDateString();
-      if (lastBanked !== today) {
-        const newStreak = lastBanked === new Date(Date.now() - 86400000).toDateString() 
-          ? bankStreak + 1 
-          : 1;
+      // Update bank streak using UTC 24-hour period
+      const now = new Date();
+      const currentUTCDate = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)); // UTC day as integer
+      const lastBankedUTCDate = parseInt(localStorage.getItem(`lastBanked_${account}`) || 0, 10);
+
+      if (lastBankedUTCDate !== currentUTCDate) {
+        const newStreak = lastBankedUTCDate === currentUTCDate - 1 ? bankStreak + 1 : 1;
         setBankStreak(newStreak);
         localStorage.setItem(`bankStreak_${account}`, newStreak);
+        localStorage.setItem(`lastBanked_${account}`, currentUTCDate);
       }
-      localStorage.setItem(`lastBanked_${account}`, today);
+
     } catch (error) {
       setStatus('Error: ' + error.message);
     } finally {
@@ -103,8 +105,8 @@ function App() {
 
   return (
     <div className="app">
+      <h1 className="title">Send2Bank</h1>
       <header className="header">
-        <h1>Send2Bank</h1>
         <nav>
           <span className="nav-item active">Home</span>
           <div className="wallet-buttons">

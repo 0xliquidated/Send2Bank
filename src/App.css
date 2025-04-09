@@ -10,7 +10,19 @@ body {
 
 .app {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px; /* Slightly wider for larger container */
+}
+
+.title {
+  color: #000000;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+  margin: 10px 0;
+  background-color: #c0c0c0;
+  padding: 5px;
+  border: 2px outset #ffffff;
+  box-shadow: inset -1px -1px #000000, inset 1px 1px #ffffff;
 }
 
 .header {
@@ -23,16 +35,11 @@ body {
   box-shadow: inset -1px -1px #000000, inset 1px 1px #ffffff;
 }
 
-.header h1 {
-  color: #000000;
-  font-size: 1.5em;
-  margin: 0;
-  font-weight: bold;
-}
-
 nav {
   display: flex;
   align-items: center;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .nav-item {
@@ -82,26 +89,27 @@ button:disabled {
 
 .container {
   background-color: #c0c0c0;
-  padding: 20px;
+  padding: 30px; /* Increased padding */
   border: 2px outset #ffffff;
   text-align: center;
-  margin: 10px;
+  margin: 20px 10px; /* Increased margin for spacing */
   box-shadow: inset -1px -1px #000000, inset 1px 1px #ffffff;
+  min-height: 300px; /* Larger height */
 }
 
 p {
   color: #000000;
-  font-size: 1.1em;
-  margin-bottom: 15px;
+  font-size: 1.2em; /* Slightly larger text */
+  margin-bottom: 20px;
 }
 
 .stats {
-  margin-top: 15px;
-  font-size: 1em;
+  margin-top: 20px;
+  font-size: 1.1em;
 }
 
 .status {
-  margin-top: 15px;
+  margin-top: 20px;
   font-size: 1em;
 }
 
@@ -114,7 +122,7 @@ p {
 }
 
 .tx-hash {
-  margin-top: 10px;
+  margin-top: 15px;
   font-size: 0.9em;
   color: #000000;
 }
