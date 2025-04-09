@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
@@ -13,16 +13,29 @@ function App() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [account, setAccount] = useState(null);
   const [status, setStatus] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [txHash, setTxHash] = useState(null);
+  const [totalBanked, setTotalBanked] = useState(0); // Total ETH banked by user
+  const [bankStreak, setBankStreak] = useState(0); // Days of consecutive banking
 
-  // Connect wallet (MetaMask or compatible)
+  // Load saved stats from localStorage
+  useEffect(() => {
+    if (account) {
+      const savedTotal = localStorage.getItem(`totalBanked_${account}`) || 0;
+      const savedStreak = localStorage.getItem(`bankStreak_${account}`) || 0;
+      setTotalBanked(parseFloat(savedTotal));
+      setBankStreak(parseInt(savedStreak, 10));
+    }
+  }, [account]);
+
+  // Connect wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        // Switch to Base mainnet (Chain ID: 8453)
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x2105' }], // 8453 in hex
+          params: [{ chainId: '0x2105' }], // Base mainnet Chain ID: 8453
         });
         const accounts = await provider.send('eth_requestAccounts', []);
         setAccount(accounts[0]);
@@ -36,6 +49,16 @@ function App() {
     }
   };
 
+  // Disconnect wallet
+  const disconnectWallet = () => {
+    setWalletConnected(false);
+    setAccount(null);
+    setStatus('');
+    setTxHash(null);
+    setTotalBanked(0);
+    setBankStreak(0);
+  };
+
   // Call the bank function
   const sendToBank = async () => {
     if (!walletConnected) {
@@ -43,6 +66,7 @@ function App() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -50,28 +74,87 @@ function App() {
 
       const tx = await contract.bank({ value: ethers.parseEther('0.0001') });
       setStatus('Transaction sent! Waiting for confirmation...');
+      setTxHash(tx.hash);
+
       await tx.wait();
       setStatus('Success! 0.0001 ETH sent to the bank.');
+
+      // Update stats (client-side for now)
+      const newTotal = totalBanked + 0.0001;
+      setTotalBanked(newTotal);
+      localStorage.setItem(`totalBanked_${account}`, newTotal);
+
+      const lastBanked = localStorage.getItem(`lastBanked_${account}`);
+      const today = new Date().toDateString();
+      if (lastBanked !== today) {
+        const newStreak = lastBanked === new Date(Date.now() - 86400000).toDateString() 
+          ? bankStreak + 1 
+          : 1;
+        setBankStreak(newStreak);
+        localStorage.setItem(`bankStreak_${account}`, newStreak);
+      }
+      localStorage.setItem(`lastBanked_${account}`, today);
     } catch (error) {
       setStatus('Error: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="container">
-      <h1>Send2Bank</h1>
-      <p>Send 0.0001 ETH to the bank with a single click.</p>
-      
-      {!walletConnected ? (
-        <button onClick={connectWallet}>Connect Wallet</button>
-      ) : (
-        <div>
-          <p>Connected: {account}</p>
-          <button onClick={sendToBank}>Bank</button>
-        </div>
-      )}
-      
-      <p className="status">{status}</p>
+    <div className="app">
+      <header className="header">
+        <h1>Send2Bank</h1>
+        <nav>
+          <span className="nav-item active">Home</span>
+          <div className="wallet-buttons">
+            {!walletConnected ? (
+              <button onClick={connectWallet} disabled={isLoading}>
+                Connect Wallet
+              </button>
+            ) : (
+              <>
+                <span className="account">
+                  {account.slice(0, 6)}...{account.slice(-4)}
+                </span>
+                <button onClick={disconnectWallet} disabled={isLoading}>
+                  Disconnect
+                </button>
+              </>
+            )}
+          </div>
+        </nav>
+      </header>
+
+      <main className="container">
+        <p>Send 0.0001 ETH to the bank with a single click.</p>
+        {walletConnected && (
+          <button onClick={sendToBank} disabled={isLoading}>
+            {isLoading ? 'Processing...' : 'Bank'}
+          </button>
+        )}
+
+        {walletConnected && (
+          <div className="stats">
+            <p>Total Banked: {totalBanked.toFixed(4)} ETH</p>
+            <p>Bank Streak: {bankStreak} day{bankStreak !== 1 ? 's' : ''}</p>
+          </div>
+        )}
+
+        {status && <p className={`status ${status.includes('Success') ? 'success' : status.includes('Error') ? 'error' : ''}`}>{status}</p>}
+        {txHash && (
+          <p className="tx-hash">
+            Transaction:{' '}
+            <a
+              href={`https://basescan.org/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {txHash.slice(0, 6)}...{txHash.slice(-4)}
+            </a>
+          </p>
+        )}
+      </main>
     </div>
   );
 }
