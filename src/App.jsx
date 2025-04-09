@@ -14,9 +14,9 @@ function App() {
   const [account, setAccount] = useState(null);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [txHash, setTxHash] = useState(null);
-  const [totalBanked, setTotalBanked] = useState(0); // Total ETH banked by user
-  const [bankStreak, setBankStreak] = useState(0); // Days of consecutive banking
+  const [txHash, setTxHash] = useState(null); // Will update with each new transaction
+  const [totalBanked, setTotalBanked] = useState(0);
+  const [bankStreak, setBankStreak] = useState(0);
 
   // Load saved stats from localStorage when account changes
   useEffect(() => {
@@ -74,7 +74,7 @@ function App() {
 
       const tx = await contract.bank({ value: ethers.parseEther('0.0001') });
       setStatus('Transaction sent! Waiting for confirmation...');
-      setTxHash(tx.hash);
+      setTxHash(tx.hash); // Updates txHash with each new transaction
 
       await tx.wait();
       setStatus('Success! 0.0001 ETH sent to the bank.');
@@ -86,7 +86,7 @@ function App() {
 
       // Update bank streak using UTC 24-hour period
       const now = new Date();
-      const currentUTCDate = Math.floor(now.getTime() / (1000 * 60 * 60 * 24)); // UTC day as integer
+      const currentUTCDate = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
       const lastBankedUTCDate = parseInt(localStorage.getItem(`lastBanked_${account}`) || 0, 10);
 
       if (lastBankedUTCDate !== currentUTCDate) {
@@ -95,7 +95,6 @@ function App() {
         localStorage.setItem(`bankStreak_${account}`, newStreak);
         localStorage.setItem(`lastBanked_${account}`, currentUTCDate);
       }
-
     } catch (error) {
       setStatus('Error: ' + error.message);
     } finally {
@@ -105,7 +104,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1 className="title">Send2Bank</h1>
+      <h1 className="title">Send2Bank - Ethereum saving made easy</h1>
       <header className="header">
         <nav>
           <span className="nav-item active">Home</span>
@@ -129,7 +128,7 @@ function App() {
       </header>
 
       <main className="container">
-        <p>Send 0.0001 ETH to the bank with a single click.</p>
+        <p>A fun dapp to save small amounts of Ethereum over time</p>
         {walletConnected && (
           <button onClick={sendToBank} disabled={isLoading}>
             {isLoading ? 'Processing...' : 'Bank'}

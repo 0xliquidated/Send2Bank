@@ -10,7 +10,7 @@ body {
 
 .app {
   width: 100%;
-  max-width: 700px; /* Slightly wider for larger container */
+  max-width: 700px;
 }
 
 .title {
@@ -26,7 +26,7 @@ body {
 }
 
 .header {
-  background-color: #c0c0c0; /* Windows 95 silver */
+  background-color: #c0c0c0;
   padding: 5px 10px;
   border: 2px outset #ffffff;
   display: flex;
@@ -51,7 +51,7 @@ nav {
 }
 
 .nav-item.active {
-  background-color: #000080; /* Navy blue for active tab */
+  background-color: #000080;
   color: #ffffff;
   border: 2px inset #ffffff;
 }
@@ -89,17 +89,17 @@ button:disabled {
 
 .container {
   background-color: #c0c0c0;
-  padding: 30px; /* Increased padding */
+  padding: 30px;
   border: 2px outset #ffffff;
   text-align: center;
-  margin: 20px 10px; /* Increased margin for spacing */
+  margin: 20px 10px;
   box-shadow: inset -1px -1px #000000, inset 1px 1px #ffffff;
-  min-height: 300px; /* Larger height */
+  min-height: 300px;
 }
 
 p {
   color: #000000;
-  font-size: 1.2em; /* Slightly larger text */
+  font-size: 1.2em;
   margin-bottom: 20px;
 }
 
@@ -114,11 +114,11 @@ p {
 }
 
 .status.success {
-  color: #00ff00; /* Bright green for success */
+  color: #00ff00;
 }
 
 .status.error {
-  color: #ff0000; /* Red for errors */
+  color: #ff0000;
 }
 
 .tx-hash {
@@ -128,7 +128,7 @@ p {
 }
 
 .tx-hash a {
-  color: #000080; /* Navy blue link */
+  color: #000080;
   text-decoration: none;
 }
 
