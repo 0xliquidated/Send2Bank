@@ -14,7 +14,7 @@ function App() {
   const [account, setAccount] = useState(null);
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [txHash, setTxHash] = useState(null); // Will update with each new transaction
+  const [txHash, setTxHash] = useState(null);
   const [totalBanked, setTotalBanked] = useState(0);
   const [bankStreak, setBankStreak] = useState(0);
 
@@ -74,7 +74,7 @@ function App() {
 
       const tx = await contract.bank({ value: ethers.parseEther('0.0001') });
       setStatus('Transaction sent! Waiting for confirmation...');
-      setTxHash(tx.hash); // Updates txHash with each new transaction
+      setTxHash(tx.hash);
 
       await tx.wait();
       setStatus('Success! 0.0001 ETH sent to the bank.');
@@ -104,7 +104,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1 className="title">Send2Bank - Ethereum saving made easy</h1>
+      <h1 className="title">Send2Bank</h1>
       <header className="header">
         <nav>
           <span className="nav-item active">Home</span>
