@@ -3,9 +3,9 @@ import { ethers } from 'ethers';
 import './App.css';
 
 // Deployed contract address on Base mainnet
-const CONTRACT_ADDRESS = "0x1298900d55bcF2a6716a3470Ac880DA226b1c0B2";
+const CONTRACT_ADDRESS = "0x62Dc45236073151f1389d11d25576D6Ac5fEEde6";
 const BANK_ABI = [
-  "function bank() external payable",
+  "function BankETH() external payable",
   "event SentToBank(address indexed sender, uint256 amount)"
 ];
 
@@ -18,7 +18,7 @@ function App() {
   const [totalBanked, setTotalBanked] = useState(0);
   const [bankStreak, setBankStreak] = useState(0);
 
-  // Load saved stats from localStorage when account changes
+  // Load saved stats from localStorage
   useEffect(() => {
     if (account) {
       const savedTotal = localStorage.getItem(`totalBanked_${account}`) || 0;
@@ -42,7 +42,7 @@ function App() {
         setWalletConnected(true);
         setStatus('Wallet connected!');
       } catch (error) {
-        setStatus('Failed to connect wallet: ' + error.message);
+        setStatus(`Failed to connect wallet: ${error.message}`);
       }
     } else {
       setStatus('Please install MetaMask or a compatible wallet!');
@@ -59,8 +59,8 @@ function App() {
     setBankStreak(0);
   };
 
-  // Call the bank function
-  const sendToBank = async () => {
+  // Call the BankETH function
+  const bankETH = async () => {
     if (!walletConnected) {
       setStatus('Please connect your wallet first!');
       return;
@@ -72,19 +72,18 @@ function App() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, BANK_ABI, signer);
 
-      const tx = await contract.bank({ value: ethers.parseEther('0.0001') });
+      const tx = await contract.BankETH({ value: ethers.parseEther('0.0001') });
       setStatus('Transaction sent! Waiting for confirmation...');
       setTxHash(tx.hash);
 
       await tx.wait();
       setStatus('Success! 0.0001 ETH sent to the bank.');
 
-      // Update total banked
+      // Update stats
       const newTotal = totalBanked + 0.0001;
       setTotalBanked(newTotal);
       localStorage.setItem(`totalBanked_${account}`, newTotal);
 
-      // Update bank streak using UTC 24-hour period
       const now = new Date();
       const currentUTCDate = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
       const lastBankedUTCDate = parseInt(localStorage.getItem(`lastBanked_${account}`) || 0, 10);
@@ -96,7 +95,11 @@ function App() {
         localStorage.setItem(`lastBanked_${account}`, currentUTCDate);
       }
     } catch (error) {
-      setStatus('Error: ' + error.message);
+      console.error('BankETH error:', error);
+      let errorMsg = 'Transaction failed';
+      if (error.reason) errorMsg = error.reason;
+      else if (error.message) errorMsg = error.message;
+      setStatus(`Error: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +119,7 @@ function App() {
             ) : (
               <>
                 <span className="account">
-                  {account.slice(0, 6)}...{account.slice(-4)}
+                  {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : ''}
                 </span>
                 <button onClick={disconnectWallet} disabled={isLoading}>
                   Disconnect
@@ -130,16 +133,15 @@ function App() {
       <main className="container">
         <p>A fun dapp to save small amounts of Ethereum over time</p>
         {walletConnected && (
-          <button onClick={sendToBank} disabled={isLoading}>
-            {isLoading ? 'Processing...' : 'Bank'}
-          </button>
-        )}
-
-        {walletConnected && (
-          <div className="stats">
-            <p>Total Banked: {totalBanked.toFixed(4)} ETH</p>
-            <p>Bank Streak: {bankStreak} day{bankStreak !== 1 ? 's' : ''}</p>
-          </div>
+          <>
+            <button onClick={bankETH} disabled={isLoading}>
+              {isLoading ? 'Processing...' : 'Bank'}
+            </button>
+            <div className="stats">
+              <p>Total Banked: {totalBanked.toFixed(4)} ETH</p>
+              <p>Bank Streak: {bankStreak} day{bankStreak !== 1 ? 's' : ''}</p>
+            </div>
+          </>
         )}
 
         {status && <p className={`status ${status.includes('Success') ? 'success' : status.includes('Error') ? 'error' : ''}`}>{status}</p>}
