@@ -27,18 +27,6 @@ const CHAINS = {
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
     blockExplorer: 'https://optimistic.etherscan.io'
   },
-  ink: {
-    chainId: '0xDE49', // 57073
-    name: 'Ink Mainnet',
-    contractAddress: '0x4C87FA56Bc3C587A116914882262f749514D0f9c',
-    abi: [
-      "function BankETH() external payable",
-      "event SentToBank(address indexed sender, uint256 amount)"
-    ],
-    rpcUrl: 'https://rpc.inkonchain.com',
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-    blockExplorer: 'https://explorer.inkonchain.com'
-  },
   arbitrum: {
     chainId: '0xA4B1', // 42161
     name: 'Arbitrum One',
@@ -211,7 +199,6 @@ function App() {
           >
             <option value="base">Base</option>
             <option value="optimism">Optimism</option>
-            <option value="ink">Ink</option>
             <option value="arbitrum">Arbitrum</option>
           </select>
           <div className="wallet-buttons">
