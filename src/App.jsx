@@ -28,16 +28,16 @@ const CHAINS = {
     blockExplorer: 'https://optimistic.etherscan.io'
   },
   ink: {
-    chainId: '0x1EDF', // 7887 (tentative, please confirm)
+    chainId: '0xDE49', // 57073
     name: 'Ink Mainnet',
     contractAddress: '0x4C87FA56Bc3C587A116914882262f749514D0f9c',
     abi: [
       "function BankETH() external payable",
       "event SentToBank(address indexed sender, uint256 amount)"
     ],
-    rpcUrl: 'https://rpc.ink', // Placeholder, please confirm
-    nativeCurrency: { name: 'INK', symbol: 'INK', decimals: 18 }, // Adjust if needed
-    blockExplorer: 'https://explorer.ink' // Placeholder, please confirm
+    rpcUrl: 'https://rpc.inkonchain.com',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    blockExplorer: 'https://explorer.inkonchain.com'
   },
   arbitrum: {
     chainId: '0xA4B1', // 42161
@@ -109,17 +109,21 @@ function App() {
         params: [{ chainId: CHAINS[chainKey].chainId }],
       });
     } catch (switchError) {
-      if (switchError.code === 4902) {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: CHAINS[chainKey].chainId,
-            chainName: CHAINS[chainKey].name,
-            rpcUrls: [CHAINS[chainKey].rpcUrl],
-            nativeCurrency: CHAINS[chainKey].nativeCurrency,
-            blockExplorerUrls: [CHAINS[chainKey].blockExplorer]
-          }],
-        });
+      if (switchError.code === 4902 || switchError.message.includes('Unrecognized chain')) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: CHAINS[chainKey].chainId,
+              chainName: CHAINS[chainKey].name,
+              rpcUrls: [CHAINS[chainKey].rpcUrl],
+              nativeCurrency: CHAINS[chainKey].nativeCurrency,
+              blockExplorerUrls: [CHAINS[chainKey].blockExplorer]
+            }],
+          });
+        } catch (addError) {
+          throw new Error(`Failed to add ${CHAINS[chainKey].name}: ${addError.message}`);
+        }
       } else {
         throw switchError;
       }
