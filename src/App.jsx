@@ -26,6 +26,30 @@ const CHAINS = {
     rpcUrl: 'https://mainnet.optimism.io',
     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
     blockExplorer: 'https://optimistic.etherscan.io'
+  },
+  ink: {
+    chainId: '0x1EDF', // 7887 (tentative, please confirm)
+    name: 'Ink Mainnet',
+    contractAddress: '0x4C87FA56Bc3C587A116914882262f749514D0f9c',
+    abi: [
+      "function BankETH() external payable",
+      "event SentToBank(address indexed sender, uint256 amount)"
+    ],
+    rpcUrl: 'https://rpc.ink', // Placeholder, please confirm
+    nativeCurrency: { name: 'INK', symbol: 'INK', decimals: 18 }, // Adjust if needed
+    blockExplorer: 'https://explorer.ink' // Placeholder, please confirm
+  },
+  arbitrum: {
+    chainId: '0xA4B1', // 42161
+    name: 'Arbitrum One',
+    contractAddress: '0xD8B0007797d27135A660ac45e1B854Bb363EC64A',
+    abi: [
+      "function BankETH() external payable",
+      "event SentToBank(address indexed sender, uint256 amount)"
+    ],
+    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    blockExplorer: 'https://arbiscan.io'
   }
 };
 
@@ -41,7 +65,7 @@ function App() {
 
   // Load chain-specific stats from localStorage
   useEffect(() => {
-    if (account) {
+    if (account && selectedChain) {
       const savedTotal = localStorage.getItem(`totalBanked_${selectedChain}_${account}`) || 0;
       const savedStreak = localStorage.getItem(`bankStreak_${selectedChain}_${account}`) || 0;
       setTotalBanked(parseFloat(savedTotal));
@@ -142,7 +166,7 @@ function App() {
       setTxHash(tx.hash);
 
       await tx.wait();
-      setStatus('Success! 0.0001 ETH sent to the bank.');
+      setStatus(`Success! 0.0001 ${CHAINS[selectedChain].nativeCurrency.symbol} sent to the bank.`);
 
       // Update stats
       const newTotal = totalBanked + 0.0001;
@@ -183,6 +207,8 @@ function App() {
           >
             <option value="base">Base</option>
             <option value="optimism">Optimism</option>
+            <option value="ink">Ink</option>
+            <option value="arbitrum">Arbitrum</option>
           </select>
           <div className="wallet-buttons">
             {!walletConnected ? (
@@ -211,7 +237,7 @@ function App() {
               {isLoading ? 'Processing...' : 'Bank'}
             </button>
             <div className="stats">
-              <p>Total Banked: {totalBanked.toFixed(4)} ETH</p>
+              <p>Total Banked: {totalBanked.toFixed(4)} {CHAINS[selectedChain].nativeCurrency.symbol}</p>
               <p>Bank Streak: {bankStreak} day{bankStreak !== 1 ? 's' : ''}</p>
             </div>
           </>
