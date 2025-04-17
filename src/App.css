@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'MS Sans Serif', 'Arial', sans-serif;
-  background-color: #008080; /* Teal background like Windows 95 */
+  background-color: #008080;
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -56,6 +56,22 @@ nav {
   border: 2px inset #ffffff;
 }
 
+.chain-dropdown {
+  background-color: #c0c0c0;
+  border: 2px inset #ffffff;
+  color: #000000;
+  font-family: 'MS Sans Serif', 'Arial', sans-serif;
+  font-size: 1em;
+  padding: 2px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.chain-dropdown:focus {
+  outline: none;
+  border: 2px outset #ffffff;
+}
+
 .wallet-buttons {
   display: flex;
   align-items: center;
@@ -75,6 +91,7 @@ button {
   font-size: 1em;
   cursor: pointer;
   box-shadow: inset -1px -1px #000000, inset 1px 1px #ffffff;
+  margin: 5px;
 }
 
 button:hover:not(:disabled) {

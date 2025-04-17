@@ -2,12 +2,32 @@ import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './App.css';
 
-// Deployed contract address on Base mainnet
-const CONTRACT_ADDRESS = "0x62Dc45236073151f1389d11d25576D6Ac5fEEde6";
-const BANK_ABI = [
-  "function BankETH() external payable",
-  "event SentToBank(address indexed sender, uint256 amount)"
-];
+const CHAINS = {
+  base: {
+    chainId: '0x2105', // 8453
+    name: 'Base Mainnet',
+    contractAddress: '0x62Dc45236073151f1389d11d25576D6Ac5fEEde6',
+    abi: [
+      "function BankETH() external payable",
+      "event SentToBank(address indexed sender, uint256 amount)"
+    ],
+    rpcUrl: 'https://mainnet.base.org',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    blockExplorer: 'https://basescan.org'
+  },
+  optimism: {
+    chainId: '0xA', // 10
+    name: 'Optimism Mainnet',
+    contractAddress: '0x46511Bc0395aFC1312a227De9FB28F89475BB5e6',
+    abi: [
+      "function BankETH() external payable",
+      "event SentToBank(address indexed sender, uint256 amount)"
+    ],
+    rpcUrl: 'https://mainnet.optimism.io',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+    blockExplorer: 'https://optimistic.etherscan.io'
+  }
+};
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -17,26 +37,24 @@ function App() {
   const [txHash, setTxHash] = useState(null);
   const [totalBanked, setTotalBanked] = useState(0);
   const [bankStreak, setBankStreak] = useState(0);
+  const [selectedChain, setSelectedChain] = useState('base');
 
-  // Load saved stats from localStorage
+  // Load chain-specific stats from localStorage
   useEffect(() => {
     if (account) {
-      const savedTotal = localStorage.getItem(`totalBanked_${account}`) || 0;
-      const savedStreak = localStorage.getItem(`bankStreak_${account}`) || 0;
+      const savedTotal = localStorage.getItem(`totalBanked_${selectedChain}_${account}`) || 0;
+      const savedStreak = localStorage.getItem(`bankStreak_${selectedChain}_${account}`) || 0;
       setTotalBanked(parseFloat(savedTotal));
       setBankStreak(parseInt(savedStreak, 10));
     }
-  }, [account]);
+  }, [account, selectedChain]);
 
   // Connect wallet
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x2105' }], // Base mainnet Chain ID: 8453
-        });
+        await switchChain(selectedChain);
         const accounts = await provider.send('eth_requestAccounts', []);
         setAccount(accounts[0]);
         setWalletConnected(true);
@@ -59,6 +77,49 @@ function App() {
     setBankStreak(0);
   };
 
+  // Switch chain
+  const switchChain = async (chainKey) => {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: CHAINS[chainKey].chainId }],
+      });
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: CHAINS[chainKey].chainId,
+            chainName: CHAINS[chainKey].name,
+            rpcUrls: [CHAINS[chainKey].rpcUrl],
+            nativeCurrency: CHAINS[chainKey].nativeCurrency,
+            blockExplorerUrls: [CHAINS[chainKey].blockExplorer]
+          }],
+        });
+      } else {
+        throw switchError;
+      }
+    }
+  };
+
+  // Handle chain selection
+  const handleChainChange = async (event) => {
+    const newChain = event.target.value;
+    setSelectedChain(newChain);
+    if (walletConnected) {
+      try {
+        await switchChain(newChain);
+        setStatus(`Switched to ${CHAINS[newChain].name}`);
+        const savedTotal = localStorage.getItem(`totalBanked_${newChain}_${account}`) || 0;
+        const savedStreak = localStorage.getItem(`bankStreak_${newChain}_${account}`) || 0;
+        setTotalBanked(parseFloat(savedTotal));
+        setBankStreak(parseInt(savedStreak, 10));
+      } catch (error) {
+        setStatus(`Failed to switch chain: ${error.message}`);
+      }
+    }
+  };
+
   // Call the BankETH function
   const bankETH = async () => {
     if (!walletConnected) {
@@ -70,7 +131,11 @@ function App() {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, BANK_ABI, signer);
+      const contract = new ethers.Contract(
+        CHAINS[selectedChain].contractAddress,
+        CHAINS[selectedChain].abi,
+        signer
+      );
 
       const tx = await contract.BankETH({ value: ethers.parseEther('0.0001') });
       setStatus('Transaction sent! Waiting for confirmation...');
@@ -82,17 +147,17 @@ function App() {
       // Update stats
       const newTotal = totalBanked + 0.0001;
       setTotalBanked(newTotal);
-      localStorage.setItem(`totalBanked_${account}`, newTotal);
+      localStorage.setItem(`totalBanked_${selectedChain}_${account}`, newTotal);
 
       const now = new Date();
       const currentUTCDate = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
-      const lastBankedUTCDate = parseInt(localStorage.getItem(`lastBanked_${account}`) || 0, 10);
+      const lastBankedUTCDate = parseInt(localStorage.getItem(`lastBanked_${selectedChain}_${account}`) || 0, 10);
 
       if (lastBankedUTCDate !== currentUTCDate) {
         const newStreak = lastBankedUTCDate === currentUTCDate - 1 ? bankStreak + 1 : 1;
         setBankStreak(newStreak);
-        localStorage.setItem(`bankStreak_${account}`, newStreak);
-        localStorage.setItem(`lastBanked_${account}`, currentUTCDate);
+        localStorage.setItem(`bankStreak_${selectedChain}_${account}`, newStreak);
+        localStorage.setItem(`lastBanked_${selectedChain}_${account}`, currentUTCDate);
       }
     } catch (error) {
       console.error('BankETH error:', error);
@@ -111,6 +176,14 @@ function App() {
       <header className="header">
         <nav>
           <span className="nav-item active">Home</span>
+          <select
+            value={selectedChain}
+            onChange={handleChainChange}
+            className="chain-dropdown"
+          >
+            <option value="base">Base</option>
+            <option value="optimism">Optimism</option>
+          </select>
           <div className="wallet-buttons">
             {!walletConnected ? (
               <button onClick={connectWallet} disabled={isLoading}>
@@ -149,7 +222,7 @@ function App() {
           <p className="tx-hash">
             Transaction:{' '}
             <a
-              href={`https://basescan.org/tx/${txHash}`}
+              href={`${CHAINS[selectedChain].blockExplorer}/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
             >
